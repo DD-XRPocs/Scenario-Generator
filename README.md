@@ -1,20 +1,36 @@
-# Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
+#Scenario Generator Facilitator Read Me
 
-# Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
-1.	Installation process
-2.	Software dependencies
-3.	Latest releases
-4.	API references
+#Description
+This package is a scenario generator facilitator designed to work within the Unity game development environment. It leverages an Excel spreadsheet to generate scenarios for use within your Unity projects. The package provides a streamlined process for importing scenario data from the Excel file and populating it within your Unity scenes.
 
-# Build and Test
-TODO: Describe and show how to build your code and run the tests. 
+#System Requirements
+  •	Unity version 2022 or later.
+  •	Excel file located in the Streaming Asset folder.
+  •	Prefab for the scenario panel with specific requirements (TMP named "Title," TMP named "Description," and a disabled button named "Button").
+  •	Install NuGet package - ExcelDataReader
 
-# Contribute
-TODO: Explain how other users and developers can contribute to make your code better. 
+#Usage Instructions
+  •	Excel Template: Use the provided Excel template or create a new Excel file with the same structure as the template. Ensure that the structure matches the expected format for the scenario data.
+  •	Panel Prefab: Use your own prefab for the scenario panel, ensuring that it meets the following requirements:
+        o	Contains a Text Mesh Pro (TMP) component named "Title" for the scenario title.
+        o	Contains a TMP component named "Description" for the scenario description.
+        o	Contains a disabled button named "Button" for user interaction.
 
-If you want to learn more about creating good readme files then refer the following [guidelines](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). You can also seek inspiration from the below readme files:
-- [ASP.NET Core](https://github.com/aspnet/Home)
-- [Visual Studio Code](https://github.com/Microsoft/vscode)
-- [Chakra Core](https://github.com/Microsoft/ChakraCore)
+#Scenario Generator Setup:
+  •	Drag and drop the "Scenario Container" prefab into your Unity scene.
+  •	Attach your prefab for the scenario panel to the "Scenario Creator" script.
+  •	Define the path location of your Excel file within the Streaming Asset folder.
+
+#CSV Parser Configuration:
+  •	Ensure that the "Set new scenario" option is enabled on the CSV Parser component.
+  
+#Generating Scenarios:
+  •	In the Unity Editor, navigate to the Inspector window for the "Scenario Creator" script.
+      o	Click on the "Generate Scenario" button to initiate the scenario generation process.
+#Additional Notes
+  •	This package provides a convenient tool for scenario generation within Unity projects.
+  •	Customization options for the scenario panel prefab allow for seamless integration with existing project aesthetics.
+  •	Ensure that the Excel file is correctly formatted and located in the designated Streaming Asset folder for proper functionality.
+  
+#Support
+For any inquiries or issues related to this package, please contact Julie Morand
