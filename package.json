@@ -1,5 +1,5 @@
 {
-    "name": "com.DD-XRPocs.Scenario-Generator",
+    "name": "com.ddxr.scenariogenerator",
     "version": "1.0.0",
     "displayName": "Scenario Generator",
     "description": "Convert an excel into a timeline based on your scenario",
