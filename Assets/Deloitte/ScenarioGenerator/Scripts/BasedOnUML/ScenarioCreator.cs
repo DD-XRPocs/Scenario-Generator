@@ -12,30 +12,52 @@ using Timeline.Samples;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine.Rendering.VirtualTexturing;
+using System.IO;
 
+[RequireComponent(typeof(PlayableDirector))]
+[RequireComponent(typeof(CSVParser))]
 public class ScenarioCreator : MonoBehaviour
 {
 
     public GameObject panelPrefab;
     TimelineAsset timeline;
-    private PlayableDirector playableDirector;
+    PlayableDirector playableDirector;
     public TrackAsset customActivationTrack; // Changed from activationTrack
     public List<CustomActivationTrack> customActivationTracks = new List<CustomActivationTrack>(); // Changed from activationTracks 
     private double startTime = 0.0;
     private double clipDuration = 5.0;
     string groupName;
     int oldStep = 0;
-    GameObject instance;
 
-    //Require once director play
+    private GameObject instance;
+    private List<Step> myScenario;
+    [SerializeField] string filePath;
 
-    public void StepCreation()
+    private void Start()
     {
+        playableDirector = GetComponent<PlayableDirector>();
+       
+    }
+    public void StepsCreation()
+    {
+        //Reset var 
+        startTime = 0.0;
+        clipDuration = 5.0;
+        oldStep = 0;
         timeline = ScriptableObject.CreateInstance<TimelineAsset>();
         playableDirector = GetComponent<PlayableDirector>();
+        playableDirector.initialTime = startTime;
+        if(filePath == null || filePath == "")
+        {
+            filePath = Path.Combine(Application.streamingAssetsPath, "scenario.xlsx");
+        }
+        //Parse file and get the list of steps
+        CSVParser.Instance.Parse(filePath);
+        myScenario = CSVParser.Instance.GetScenario();
+
+        
         foreach (Step step in myScenario)
         {
-            //Debug.Log("in step creation : "+step.title);
 
             if (step.isPanel)
             {
@@ -48,21 +70,20 @@ public class ScenarioCreator : MonoBehaviour
                     {
                         ButtonSetUp(step);
                     }
-                    TimeLineSetUp(step);
+                    SetTimeLine(step);
                 }
             }
             
 
         }
-        TimeLineSaving();
+        SaveTimeLine();
         
     }
 
 
     public void PanelSetUp(Step myStep)
     {
-        
-            //Debug.Log("in panel set up : " + myStep.title);
+
             instance = Instantiate(panelPrefab);
             instance.name = myStep.containerName;
             instance.transform.SetParent(transform);
@@ -80,19 +101,15 @@ public class ScenarioCreator : MonoBehaviour
 
     public void ButtonSetUp(Step myStep)
     {
-        //Debug.Log("in button creation : " + myStep.title);
-        //Transform myPanel = transform.Find("Step_" + myStep.nbstep).GetComponent<Transform>();
         Transform myBtn = instance.transform.Find("Button").GetComponent<Transform>();
-        //Debug.Log("in button befor active btn : " + myStep.title);
         myBtn.gameObject.SetActive(true);
-        //Debug.Log("in button after active btn : " + myStep.title);
         TextMeshProUGUI textMeshPro = myBtn.GetComponentInChildren<TextMeshProUGUI>();
         textMeshPro.text = string.IsNullOrEmpty(myStep.buttonName) ? "Default Button Name" : myStep.buttonName;
 
         instance.AddComponent<ConditionButton>();
     }
 
-    public void TimeLineSaving()
+    public void SaveTimeLine()
     {
 
         string assetPath = "Assets/Deloitte/Timeline/NewScenario.playable";
@@ -112,14 +129,43 @@ public class ScenarioCreator : MonoBehaviour
 
     }
 
-    public void TimeLineSetUp(Step myStep)
+    public void SetTimeLine(Step myStep)
     {
+        //Check for markerTrack
+        MarkerTrack markerTrack =null;
+        foreach (TrackAsset track in timeline.GetRootTracks())
+        {
+            
+            if (track is MarkerTrack marker)
+            {
+                markerTrack= marker;
+                break;
+            }
+        }
+        if(markerTrack == null)
+        {
+            markerTrack = timeline.CreateTrack<MarkerTrack>(null, "MarkerTrack");
+        }
+       
+
+        if (myStep.nbstep != oldStep)
+        {
+            startTime += clipDuration + 5.0f;
+            clipDuration += 10f;
+            Debug.Log("start time : " + startTime);
+            oldStep = myStep.nbstep;
+            var annotationMarker = markerTrack.CreateMarker<AnnotationMarker>(clipDuration);
+
+            annotationMarker.color = Color.green;
+            annotationMarker.title = myStep.nbstep.ToString();
+        }
+
         if (myStep.group != "" || myStep.group != null)
         {
             groupName = myStep.group;
             GroupTrack existingGroupTrack = null;
-
-            // Check if the group track already exists
+           
+            //Check for group track
             foreach (TrackAsset track in timeline.GetRootTracks())
             {
                 if (track is GroupTrack groupTrack && groupTrack.name == groupName)
@@ -129,27 +175,21 @@ public class ScenarioCreator : MonoBehaviour
                 }
             }
 
-
-            // If the group track doesn't exist, create a new one
             if (existingGroupTrack == null)
             {
+               
                 existingGroupTrack = timeline.CreateTrack<GroupTrack>(null, groupName);
             }
+            customActivationTrack = timeline.CreateTrack<CustomActivationTrack>(existingGroupTrack, myStep.containerName);
 
-            customActivationTrack = timeline.CreateTrack<CustomActivationTrack>(existingGroupTrack, "CustomActivationTrack");
-           
-            var markerTrack = timeline.CreateTrack<MarkerTrack>(null, "MarkerTrack");
-            var annotationMarker = markerTrack.CreateMarker<AnnotationMarker>(startTime + 5f);
-            annotationMarker.color = Color.green;
-            annotationMarker.title = myStep.group;
         }
         else
         {
-            customActivationTrack = timeline.CreateTrack<CustomActivationTrack>(null, "CustomActivationTrack");
+            customActivationTrack = timeline.CreateTrack<CustomActivationTrack>(null, myStep.containerName);
         }
 
         GameObject go = instance;
-        TimelineClip timelineClip = customActivationTrack.CreateClip<CustomActivationAsset>(); // changed from activationTrack
+        TimelineClip timelineClip = customActivationTrack.CreateClip<CustomActivationAsset>();
 
         timelineClip.start = startTime;
         timelineClip.duration = clipDuration;
@@ -157,38 +197,50 @@ public class ScenarioCreator : MonoBehaviour
         CustomActivationAsset asset = (CustomActivationAsset)timelineClip.asset;
         asset.targetObject.exposedName = myStep.title;
         asset.targetObject.defaultValue = go;
-        playableDirector.SetReferenceValue(asset.targetObject.exposedName, go);
-
-        if (myStep.nbstep != oldStep)
-        {
-            startTime += clipDuration + 5.0;
-            oldStep = myStep.nbstep;
-        }
-
-        
+        playableDirector.SetReferenceValue(asset.targetObject.exposedName, go);  
         playableDirector.playableAsset = timeline;
         playableDirector.initialTime = startTime;
         playableDirector.Evaluate();
-        //TimeLineSaving();
+        
     }
 
     public GameObject FindPanelWithSameID(int ID)
     {
 
         StepCharacteristics[] children = this.transform.GetComponentsInChildren<StepCharacteristics>(true);
-        Debug.Log("number of panels " + children.Length);
+       
         foreach (StepCharacteristics child in children)
         {
-            Debug.Log("the ID of new step : " + ID + "  The ID of panel : " + child.GetID());
+          
             if (child.GetID() == ID)
             {
-                Debug.Log("there is a same");
+               
                 return child.gameObject;
             }
         }
-        Debug.Log("there is NO same");
+       
         return null;
     }
 
 
 }
+
+
+#if UNITY_EDITOR
+[CustomEditor(typeof(ScenarioCreator))]
+public class ScenarioCreatorEditor : Editor
+{
+    public override void OnInspectorGUI()
+    {
+        base.OnInspectorGUI();
+        ScenarioCreator creator = (ScenarioCreator)target;
+
+        EditorGUILayout.LabelField("Custom Panel & Scenario Generator :");
+        if (GUILayout.Button("Generate Scenario"))
+        {
+            creator.StepsCreation(); 
+
+        }
+    }
+}
+#endif

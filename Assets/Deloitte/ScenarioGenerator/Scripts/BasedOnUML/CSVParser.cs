@@ -8,9 +8,8 @@ using static UnityEngine.GraphicsBuffer;
 
 public class CSVParser : MonoBehaviour
 {
+    public static CSVParser Instance { get; private set; } = new CSVParser();
     [SerializeField] bool setNewScenario;
-    
-    string filePath = Path.Combine(Application.streamingAssetsPath, "scenario.xlsx");
     public struct Step
     {
         public int id;
@@ -24,13 +23,20 @@ public class CSVParser : MonoBehaviour
         public string buttonName;
     }
 
-    public static List<Step> myScenario = new List<Step>();
+    public List<Step> myScenario = new List<Step>();
     [SerializeField]ScenarioCreator scenarioCreator ;
 
-    
-    // public method which passes in the variables
+    public List<Step> GetScenario()
+    {
+        return myScenario;
+    }
+
+    public void Parse(string path)
+    {
+        FromExcelToList(path);
+    }
    
-    public List<Step> FromExcelToList(variables)
+    private void FromExcelToList(string filePath)
     {
         //int i = 0;
         myScenario.Clear();
@@ -65,38 +71,10 @@ public class CSVParser : MonoBehaviour
                 }
             }
         }
-        return myScenario;
-        //scenarioCreator.StepCreation(); // create methode that return  the scenario list instead of calling it 
-        // DebugCheck();
+
     }
 
-    public void DebugCheck()
-    {
-    
-        foreach (var step in myScenario)
-        {
-            Debug.Log("in step  " + step.title);
-        }
-    }
-}
-
-#if UNITY_EDITOR
-[CustomEditor(typeof(CSVParser))]
-public class CSVParserEditor : Editor
-{
-    public override void OnInspectorGUI()
-    {
-        base.OnInspectorGUI();
-        CSVParser parser = (CSVParser)target;
-
-        EditorGUILayout.LabelField("Custom Panel & Scenario Generator :");
-        if(GUILayout.Button("Generate Scenario"))
-        {
-            parser.FromExcelToList(); // switch to creator script
-
-        }
-    }
 }
 
 
-#endif
+
