@@ -4,9 +4,6 @@
     "displayName": "Scenario Generator",
     "description": "Convert an excel into a timeline based on your scenario",
     "unity" : "2022.3",
-    "dependencies": {
-        "com.github-glitchenzo.nugetforunity": "https://github.com/GlitchEnzo/NuGetForUnity.git"
-    },
     "author": {
         "name": "Julie Morand",
         "email" : "jmorand@deloitte.com",
